@@ -94,7 +94,7 @@ export default function UserInfoScreen() {
     // Validate smoking/drinking years
     if (smokingHistory) {
       const sYears = parseInt(smokingYears);
-      if (isNaN(sYears) || sYears < 1 || sYears > 70) {
+      if (isNaN(sYears) || sYears < 0 || sYears > 70) {
         Alert.alert('Error', 'Please enter valid smoking years');
         setLoading(false);
         return;
@@ -102,7 +102,7 @@ export default function UserInfoScreen() {
     }
     if (drinkingHistory) {
       const dYears = parseInt(drinkingYears);
-      if (isNaN(dYears) || dYears < 1 || dYears > 70) {
+      if (isNaN(dYears) || dYears < 0 || dYears > 70) {
         Alert.alert('Error', 'Please enter valid drinking years');
         setLoading(false);
         return;
@@ -218,7 +218,8 @@ export default function UserInfoScreen() {
                 />
               </View>
             )}
-
+            
+            {/*
             <Text style={styles.label}>New Password (optional)</Text>
             <TextInput
               style={styles.input}
@@ -236,6 +237,8 @@ export default function UserInfoScreen() {
               secureTextEntry
               placeholder="Re-enter new password"
             />
+             */}
+            
 
             <TouchableOpacity
               style={[styles.button, loading && styles.disabledButton]}
@@ -318,11 +321,14 @@ const styles = StyleSheet.create({
     fontSize: 16,
   },
   backButton: {
-    marginTop: 20,
+    backgroundColor: '#77DD77',
+    padding: 15,
+    borderRadius: 6,
     alignItems: 'center',
+    marginTop: 20,
   },
   backButtonText: {
     color: '#fff',
-    fontSize: 14,
+    fontSize: 16,
   },
 });
