@@ -10,20 +10,20 @@ import {
   KeyboardAvoidingView,
   Platform,
   ScrollView,
-  TouchableWithoutFeedback,
   Keyboard,
 } from "react-native";
 import axios from "axios";
 
-const API_URL = "http://192.168.2.17:8000/chat"; // Update with your server IP(which you can find in you mow computer IP address)
+const API_URL = "http://192.168.2.17:8000/chat"; // Update with your server URL(you can find it in your own ipconfig)
+
 export default function ChatbotPage() {
   const [messages, setMessages] = useState<
     { role: string; text: string; timestamp: string }[]
   >([]);
   const [inputText, setInputText] = useState("");
-  const scrollViewRef = useRef<ScrollView>(null); 
+  const scrollViewRef = useRef<ScrollView>(null);
 
-
+  //send message to chatbot
   const sendMessageToChatbot = async () => {
     if (!inputText.trim()) return;
 
@@ -41,10 +41,9 @@ export default function ChatbotPage() {
         API_URL,
         { message: inputText },
         {
-          timeout: 10000, 
+          timeout: 10000,
         }
       );
-
 
       const aiMessage = {
         role: "ai",
@@ -69,7 +68,6 @@ export default function ChatbotPage() {
       Alert.alert("Error", "Failed to connect to chatbot");
     }
   };
-
   const scrollToBottom = () => {
     if (scrollViewRef.current) {
       scrollViewRef.current.scrollToEnd({ animated: true });
@@ -82,66 +80,64 @@ export default function ChatbotPage() {
       behavior={Platform.OS === "ios" ? "padding" : "height"}
       keyboardVerticalOffset={Platform.OS === "ios" ? 90 : 0}
     >
-      <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
-        <View style={{ flex: 1 }}>
-          <ScrollView
-            ref={scrollViewRef}
-            contentContainerStyle={styles.messagesList}
-            onContentSizeChange={scrollToBottom}
-          >
-            {messages.map((item, index) => (
+      <View style={{ flex: 1 }}>
+        <ScrollView
+          ref={scrollViewRef}
+          contentContainerStyle={styles.messagesList}
+          onContentSizeChange={scrollToBottom}
+          keyboardShouldPersistTaps="handled" 
+          keyboardDismissMode="on-drag"    
+        >
+          {messages.map((item, index) => (
+            <View
+              key={index}
+              style={[
+                styles.messageContainer,
+                item.role === "user"
+                  ? styles.userContainer
+                  : styles.aiContainer,
+              ]}
+            >
+              {item.role === "ai" && (
+                <Image
+                  source={require("../assets/images/ai_avatar.png")}
+                  style={styles.avatar}
+                />
+              )}
               <View
-                key={index}
                 style={[
-                  styles.messageContainer,
-                  item.role === "user"
-                    ? styles.userContainer
-                    : styles.aiContainer,
+                  styles.chatBubble,
+                  item.role === "user" ? styles.userBubble : styles.aiBubble,
                 ]}
               >
-                {item.role === "ai" && (
-                  <Image
-                    source={require("../assets/images/ai_avatar.png")}
-                    style={styles.avatar}
-                  />
-                )}
-                <View
-                  style={[
-                    styles.chatBubble,
-                    item.role === "user" ? styles.userBubble : styles.aiBubble,
-                  ]}
-                >
-                  <Text style={styles.chatText}>
-                    {typeof item.text === "string"
-                      ? item.text
-                      : JSON.stringify(item.text)}
-                  </Text>
-                  <Text style={styles.timestamp}>
-                    {item.timestamp}
-                  </Text>
-                </View>
+                <Text style={styles.chatText}>
+                  {typeof item.text === "string"
+                    ? item.text
+                    : JSON.stringify(item.text)}
+                </Text>
+                <Text style={styles.timestamp}>{item.timestamp}</Text>
               </View>
-            ))}
-          </ScrollView>
+            </View>
+          ))}
+        </ScrollView>
 
-          <View style={styles.chatInputContainer}>
-            <TextInput
-              style={styles.chatInput}
-              value={inputText}
-              onChangeText={setInputText}
-              placeholder="Ask me anything..."
-              multiline
-              onFocus={scrollToBottom}
-            />
-            <TouchableOpacity
-              style={styles.sendButton}
-              onPress={sendMessageToChatbot}
-            >
-              <Text style={styles.sendButtonText}>Send</Text>
-            </TouchableOpacity>
-          </View>
+        <View style={styles.chatInputContainer}>
+          <TextInput
+            style={styles.chatInput}
+            value={inputText}
+            onChangeText={setInputText}
+            placeholder="Ask me anything..."
+            multiline
+            onFocus={scrollToBottom}
+          />
+          <TouchableOpacity
+            style={styles.sendButton}
+            onPress={sendMessageToChatbot}
+          >
+            <Text style={styles.sendButtonText}>Send</Text>
+          </TouchableOpacity>
         </View>
-      </TouchableWithoutFeedback>
+      </View>
     </KeyboardAvoidingView>
   );
 }
@@ -190,6 +186,7 @@ const styles = StyleSheet.create({
     width: 30,
     height: 30,
     borderRadius: 15,
+    marginRight: 5,
   },
   chatInputContainer: {
     flexDirection: "row",
