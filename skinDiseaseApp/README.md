@@ -22,6 +22,7 @@ these packages need to be installed first:
 * expo install expo-linear-gradient ,
 * npm install @expo/vector-icons ,
 * npm install @react-native-picker/picker
+* npm install react-native-keyboard-aware-scroll-view
 
 backend steps: 
 * make the terminal as bash, then make sure it is under you path location: 
