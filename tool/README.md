@@ -1,6 +1,6 @@
-# Skin Lesion Classification Tool
+# Skin Lesion Classification CLI Tool
 
-A Python-based tool for classifying skin lesion images using a deep learning model trained on the HAM10000 dataset. This tool allows for quick and easy classification of dermoscopic images into 7 different skin conditions.
+A Python-based CLI tool for classifying skin lesion images using a deep learning model trained on the HAM10000 dataset. This tool allows for quick and easy classification of dermoscopic images into 7 different skin conditions.
 
 ## Overview
 
@@ -33,8 +33,8 @@ The HAM10000 dataset ("Human Against Machine with 10000 training images") is a l
 
 1. Clone this repository:
    ```
-   git clone https://github.com/yourusername/skin-lesion-classifier.git
-   cd skin-lesion-classifier
+   git clone https://github.com/Davidthecoderme/CSI4900_Project.git
+   cd CSI4900_Project/tool
    ```
 
 2. Install the required dependencies:
