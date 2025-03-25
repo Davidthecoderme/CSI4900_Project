@@ -16,6 +16,9 @@ import { useRouter } from 'expo-router';
 import { auth , db} from '../database/firebase';
 import { collection, addDoc } from 'firebase/firestore';
 import { uploadFileToS3 } from '../database/s3';
+import axios from "axios";
+
+const API_URL = "http://192.168.2.25:8000/detect";
 
 export default function DetectSkin() {
   const router = useRouter();
@@ -93,8 +96,8 @@ export default function DetectSkin() {
     }
     setUploading(true);
     try {
-      for (const imageUri of images) {
-        const fileUrl = await uploadFileToS3(imageUri, user.uid);
+      for (const imageUrl of images) {
+        const fileUrl = await uploadFileToS3(imageUrl, user.uid);
         if (fileUrl) {
           await addDoc(collection(db, 'images'), {
             downloadURL: fileUrl,
@@ -115,17 +118,40 @@ export default function DetectSkin() {
   };
 
   // make a dummy detection, will add ai model later
+
+
   const handleStartDetecting = async () => {
     if (images.length === 0) {
       Alert.alert('No images selected for detection');
       return;
     }
+    console.log(images[0]);
     setDetectionInProgress(true);
     setDetectionResult(null);
     try {
-      // dummy model results 
+    const formData = new FormData();
+    const fileUri = images[0];
+    console.log(fileUri);
+
+    // Extract filename (Android/iOS compatible)
+    let filename = fileUri.split('/').pop();
+    if (!filename) filename = 'image.jpg'; // fallback
+    console.log(filename);
+
+    formData.append('file', {
+      uri: fileUri,
+      name: filename,
+      
+    } as any); // `as any` to bypass TypeScript errors
+
+    const response = await axios.post(API_URL, formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    });
+
+      setDetectionResult(response.data.result);
       await new Promise((resolve) => setTimeout(resolve, 2000)); 
-      setDetectionResult('Mock detection result: Possible Disease A');
     } catch (error) {
       console.error('Detection error:', error);
       Alert.alert('Detection failed');
@@ -134,6 +160,8 @@ export default function DetectSkin() {
     }
   };
 
+
+  
   const removeImage = (index: number) => {
     setImages((prev) => prev.filter((_, i) => i !== index));
   };
