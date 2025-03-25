@@ -1,11 +1,13 @@
 import logging
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException,UploadFile, File
 from pydantic import BaseModel
 import google.generativeai as genai
 import os
 from fastapi.middleware.cors import CORSMiddleware
 from dotenv import load_dotenv
-
+import subprocess
+import traceback
+import uuid
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
@@ -38,6 +40,9 @@ class ChatRequest(BaseModel):
 class ChatResponse(BaseModel):
     response: str
 
+class ImagePath(BaseModel):
+    imagePath: str
+
 @app.post("/chat", response_model=ChatResponse)
 async def chat(request: ChatRequest):
     user_message = request.message
@@ -55,6 +60,68 @@ async def chat(request: ChatRequest):
     except Exception as e:
         logger.error(f"Error in chat endpoint: {str(e)}")
         raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.post('/detect')
+async def classify_imagess(file: UploadFile = File(...)):
+    os.makedirs('temp_uploads', exist_ok=True)
+    # print(f"Received file: {file.read()},")
+    
+    try:
+
+        file_ext = os.path.splitext(file.filename)[1]
+        temp_path = f"temp_uploads/{uuid.uuid4()}.jpg"
+        
+        print(f"Received file: {temp_path},")
+        # read file
+        with open(temp_path, 'wb') as buffer:
+            while content := await file.read(1024 * 1024):
+                buffer.write(content)
+
+        file_size = os.path.getsize(temp_path)
+        print(f"Saved file size: {file_size} bytes")
+        
+        # Verify file was written
+        if file_size == 0:
+            raise HTTPException(status_code=400, detail="Uploaded file is empty")
+        
+        logger.info(f"Processing image: {temp_path}")
+        
+        # Run
+        result = subprocess.run(
+            ['python', 'skin_lesion_classifier.py', '--image', temp_path],
+            capture_output=True,
+            text=True,
+            timeout=30  # Add timeout to prevent hanging
+        )
+        logger.info(f"Successfully processed image. Result: {result.stdout}")
+        
+        # Clean up temp file
+        try:
+            os.remove(temp_path)
+        except OSError as e:
+            logger.warning(f"Could not remove temp file: {e}")
+        
+        # Handle subprocess results
+        if result.returncode != 0:
+            logger.error(f"Classification failed: {result.stderr}")
+            raise HTTPException(
+                status_code=400,
+                detail=f"Classification error: {result.stderr[:200]}" 
+            )
+            
+        logger.info(f"Successfully processed image. Result: {result.stdout}")
+        return {'result': result.stdout.strip()}
+        
+    except subprocess.TimeoutExpired:
+        logger.error("Classification timed out")
+        raise HTTPException(status_code=504, detail="Classification timed out")
+    except Exception as e:
+        logger.error(f"Unexpected error: {str(e)}")
+        raise HTTPException(status_code=500, detail="Internal processing error")
+
+
+
 
 if __name__ == "__main__":
     import uvicorn
