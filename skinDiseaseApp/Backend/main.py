@@ -6,7 +6,7 @@ import os
 from fastapi.middleware.cors import CORSMiddleware
 from dotenv import load_dotenv
 import subprocess
-import traceback
+import asyncio
 import uuid
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -53,9 +53,13 @@ async def chat(request: ChatRequest):
         prompt = f"You are a health assistant. Provide accurate and helpful information about diseases or health-related questions. User: {user_message}"
         logger.info(f"Sending prompt to Gemini: {prompt}")
         
-        response = model.generate_content(prompt)
-        logger.info(f"Received response from Gemini: {response.text}")
+        # Use asyncio to run the model generation in a separate thread
+        loop = asyncio.get_event_loop()
+        response = await loop.run_in_executor(
+            None, lambda: model.generate_content(prompt)
+        )
         
+        logger.info(f"Received response from Gemini: {response.text}")
         return ChatResponse(response=response.text)
     except Exception as e:
         logger.error(f"Error in chat endpoint: {str(e)}")
