@@ -1,4 +1,6 @@
-import React, { useState, useRef } from "react";
+// ChatbotPage.tsx
+
+import React, { useState, useRef, useEffect } from "react";
 import {
   View,
   Text,
@@ -10,95 +12,293 @@ import {
   KeyboardAvoidingView,
   Platform,
   ScrollView,
-  Keyboard,
+  Modal,
+  Animated,
+  Easing,
 } from "react-native";
 import axios from "axios";
+import { auth, db } from "../database/firebase";
+import {
+  collection,
+  query,
+  orderBy,
+  onSnapshot,
+  addDoc,
+  serverTimestamp,
+  getDocs,
+  writeBatch,
+  doc,
+} from "firebase/firestore";
 
-const API_URL = "http://192.168.2.17:8000/chat"; // Update with your server URL(you can find it in your own ipconfig)
+const API_URL = "http://192.168.2.17:8000/chat";
+
+// Animated loading indicator for "Reasoning..."
+const ReasoningIndicator = () => {
+  const translateX = useRef(new Animated.Value(-50)).current;
+  useEffect(() => {
+    Animated.loop(
+      Animated.timing(translateX, {
+        toValue: 50, 
+        duration: 1500,
+        easing: Easing.linear,
+        useNativeDriver: true,
+      })
+    ).start();
+  }, [translateX]);
+
+  return (
+    <View style={styles.reasoningBarContainer}>
+      <Animated.View
+        style={[
+          styles.reasoningBar,
+          { transform: [{ translateX }] },
+        ]}
+      />
+    </View>
+  );
+};
 
 export default function ChatbotPage() {
+  const user = auth.currentUser;
+  const [sessions, setSessions] = useState<{ id: string; createdAt: Date }[]>(
+    []
+  );
+  const [currentSessionId, setCurrentSessionId] = useState<string | null>(null);
   const [messages, setMessages] = useState<
-    { role: string; text: string; timestamp: string }[]
+    { id?: string; role: string; text: string; timestamp: string }[]
   >([]);
   const [inputText, setInputText] = useState("");
+  const [showSessions, setShowSessions] = useState(false);
+  const [isThinking, setIsThinking] = useState(false);
+
   const scrollViewRef = useRef<ScrollView>(null);
 
-  //send message to chatbot
-  const sendMessageToChatbot = async () => {
-    if (!inputText.trim()) return;
+  // Load sessions
+  useEffect(() => {
+    if (!user) return;
+    const sessionsRef = collection(db, "chats", user.uid, "sessions");
+    const q = query(sessionsRef, orderBy("createdAt", "desc"));
+    const unsub = onSnapshot(q, (snap) => {
+      const list = snap.docs.map((doc) => {
+        const ts = doc.data().createdAt;
+        return {
+          id: doc.id,
+          createdAt: ts?.toDate() || new Date(),
+        };
+      });
+      setSessions(list);
+      // Auto-select the first session if none is selected
+      if (!currentSessionId && list.length) {
+        setCurrentSessionId(list[0].id);
+      }
+    });
+    return unsub;
+  }, [user]);
 
+  // Load messages of the current session
+  useEffect(() => {
+    if (!user || !currentSessionId) {
+      setMessages([]);
+      return;
+    }
+    const msgsRef = collection(
+      db,
+      "chats",
+      user.uid,
+      "sessions",
+      currentSessionId,
+      "messages"
+    );
+    const q = query(msgsRef, orderBy("createdAt", "asc"));
+    const unsub = onSnapshot(q, (snap) => {
+      const list = snap.docs.map((doc) => ({
+        id: doc.id,
+        role: doc.data().role,
+        text: doc.data().text,
+        timestamp: doc.data().timestamp,
+      }));
+      setMessages(list);
+      scrollViewRef.current?.scrollToEnd({ animated: true });
+    });
+    return unsub;
+  }, [user, currentSessionId]);
 
-    const userMessage = {
-      role: "user",
-      text: inputText,
-      timestamp: new Date().toLocaleTimeString(),
-    };
-    setMessages((prev) => [...prev, userMessage]);
-    setInputText("");
+  // Confirm new session
+  const confirmNewSession = () => {
+    Alert.alert(
+      "Start a new chat?",
+      "Are you sure you want to start a new chat session?",
+      [
+        { text: "No", style: "cancel" },
+        { text: "Yes", onPress: createNewSession },
+      ]
+    );
+  };
 
+  const createNewSession = async () => {
+    if (!user) return;
     try {
-      const response = await axios.post(
-        API_URL,
-        { message: inputText },
+      const docRef = await addDoc(collection(db, "chats", user.uid, "sessions"), {
+        createdAt: serverTimestamp(),
+      });
+
+      // Insert an initial assistant message
+      await addDoc(
+        collection(db, "chats", user.uid, "sessions", docRef.id, "messages"),
         {
-          timeout: 10000,
+          role: "ai",
+          text: "Hello! I'm your Skin Disease Detection assistant. How can I help you today?",
+          timestamp: new Date().toLocaleTimeString(),
+          createdAt: serverTimestamp(),
         }
       );
 
-      const aiMessage = {
-        role: "ai",
-        text:
-          typeof response.data.response === "string"
-            ? response.data.response
-            : JSON.stringify(response.data.response),
-        timestamp: new Date().toLocaleTimeString(),
-      };
-      setMessages((prev) => [...prev, aiMessage]);
-    } catch (error) {
-      console.error("Error sending message:", error);
-      const err = error as any;
-      if (err.response) {
-        console.error("Response data:", err.response.data);
-        console.error("Response status:", err.response.status);
-      } else if (err.request) {
-        console.error("No response received:", err.request);
-      } else {
-        console.error("Error setting up request:", err.message);
-      }
-      Alert.alert("Error", "Failed to connect to chatbot");
-    }
-  };
-  const scrollToBottom = () => {
-    if (scrollViewRef.current) {
-      scrollViewRef.current.scrollToEnd({ animated: true });
+      setCurrentSessionId(docRef.id);
+    } catch (err) {
+      console.error("Failed to create session", err);
     }
   };
 
+  // Delete session
+  const deleteSession = async (sessionId: string) => {
+    if (!user) return;
+    try {
+      const batch = writeBatch(db);
+
+      // get all messages
+      const msgsSnap = await getDocs(
+        collection(db, "chats", user.uid, "sessions", sessionId, "messages")
+      );
+      msgsSnap.forEach((m) => batch.delete(m.ref));
+
+      batch.delete(doc(db, "chats", user.uid, "sessions", sessionId));
+      await batch.commit();
+
+      if (sessionId === currentSessionId) {
+        // if we're currently in this session, switch to another
+        setCurrentSessionId((prev) => {
+          const remaining = sessions.filter((s) => s.id !== sessionId);
+          return remaining[0]?.id || null;
+        });
+      }
+    } catch (err) {
+      console.error("Failed to delete session", err);
+    }
+  };
+
+  // Confirm delete
+  const confirmDelete = (sessionId: string) => {
+    Alert.alert(
+      "Delete session?",
+      "This will remove all messages in this session.",
+      [
+        { text: "Cancel", style: "cancel" },
+        {
+          text: "Delete",
+          style: "destructive",
+          onPress: () => deleteSession(sessionId),
+        },
+      ]
+    );
+  };
+
+  // Send user message + AI reply
+  const sendMessage = async () => {
+    if (!inputText.trim() || !user || !currentSessionId) return;
+    const text = inputText.trim();
+    const time = new Date().toLocaleTimeString();
+    setInputText("");
+
+    // 1) add user message
+    await addDoc(
+      collection(
+        db,
+        "chats",
+        user.uid,
+        "sessions",
+        currentSessionId,
+        "messages"
+      ),
+      {
+        role: "user",
+        text,
+        timestamp: time,
+        createdAt: serverTimestamp(),
+      }
+    );
+
+    setIsThinking(true);
+
+    let aiText = "";
+    try {
+      // timeout 15s
+      const resp = await axios.post(API_URL, { message: text }, { timeout: 15000 });
+      aiText =
+        typeof resp.data.response === "string"
+          ? resp.data.response
+          : JSON.stringify(resp.data.response);
+    } catch (err) {
+      Alert.alert("Error", "Failed to connect to chatbot");
+      setIsThinking(false);
+      return;
+    }
+
+    setIsThinking(false);
+
+    // 5) add AI message
+    const aiTime = new Date().toLocaleTimeString();
+    await addDoc(
+      collection(
+        db,
+        "chats",
+        user.uid,
+        "sessions",
+        currentSessionId,
+        "messages"
+      ),
+      {
+        role: "ai",
+        text: aiText,
+        timestamp: aiTime,
+        createdAt: serverTimestamp(),
+      }
+    );
+  };
+
   return (
-    <KeyboardAvoidingView
-      style={styles.chatContainer}
-      behavior={Platform.OS === "ios" ? "padding" : "height"}
-      keyboardVerticalOffset={Platform.OS === "ios" ? 90 : 0}
-    >
-      <View style={{ flex: 1 }}>
+    <View style={styles.container}>
+      <View style={styles.header}>
+        <TouchableOpacity style={styles.headerButton} onPress={confirmNewSession}>
+          <Text style={styles.headerButtonText}>New Chat</Text>
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={styles.headerButton}
+          onPress={() => setShowSessions(true)}
+        >
+          <Text style={styles.headerButtonText}>Sessions</Text>
+        </TouchableOpacity>
+      </View>
+
+      <KeyboardAvoidingView
+        style={styles.chatArea}
+        behavior={Platform.OS === "ios" ? "padding" : "height"}
+        keyboardVerticalOffset={Platform.OS === "ios" ? 90 : 0}
+      >
         <ScrollView
           ref={scrollViewRef}
           contentContainerStyle={styles.messagesList}
-          onContentSizeChange={scrollToBottom}
-          keyboardShouldPersistTaps="handled" 
-          keyboardDismissMode="on-drag"    
+          keyboardShouldPersistTaps="handled"
+          keyboardDismissMode="on-drag"
         >
-          {messages.map((item, index) => (
+          {messages.map((m, i) => (
             <View
-              key={index}
+              key={m.id ?? i}
               style={[
                 styles.messageContainer,
-                item.role === "user"
-                  ? styles.userContainer
-                  : styles.aiContainer,
+                m.role === "user" ? styles.userContainer : styles.aiContainer,
               ]}
             >
-              {item.role === "ai" && (
+              {m.role === "ai" && (
                 <Image
                   source={require("../assets/images/ai_avatar.png")}
                   style={styles.avatar}
@@ -106,97 +306,124 @@ export default function ChatbotPage() {
               )}
               <View
                 style={[
-                  styles.chatBubble,
-                  item.role === "user" ? styles.userBubble : styles.aiBubble,
+                  styles.bubble,
+                  m.role === "user" ? styles.userBubble : styles.aiBubble,
                 ]}
               >
-                <Text style={styles.chatText}>
-                  {typeof item.text === "string"
-                    ? item.text
-                    : JSON.stringify(item.text)}
-                </Text>
-                <Text style={styles.timestamp}>{item.timestamp}</Text>
+                <Text style={styles.text}>{m.text}</Text>
+                <Text style={styles.timestamp}>{m.timestamp}</Text>
               </View>
             </View>
           ))}
-        </ScrollView>
 
-        <View style={styles.chatInputContainer}>
+          {isThinking && (
+            <View style={[styles.messageContainer, styles.aiContainer]}>
+              <View style={[styles.bubble, styles.aiBubble]}>
+                <Text style={styles.text}>Reasoning...</Text>
+                <ReasoningIndicator />
+              </View>
+            </View>
+          )}
+        </ScrollView>
+        <View style={styles.inputContainer}>
           <TextInput
-            style={styles.chatInput}
+            style={styles.input}
             value={inputText}
             onChangeText={setInputText}
             placeholder="Ask me anything..."
             multiline
-            onFocus={scrollToBottom}
           />
-          <TouchableOpacity
-            style={styles.sendButton}
-            onPress={sendMessageToChatbot}
-          >
-            <Text style={styles.sendButtonText}>Send</Text>
+          <TouchableOpacity style={styles.sendButton} onPress={sendMessage}>
+            <Text style={styles.sendText}>Send</Text>
           </TouchableOpacity>
         </View>
-      </View>
-    </KeyboardAvoidingView>
+      </KeyboardAvoidingView>
+
+      <Modal
+        visible={showSessions}
+        animationType="slide"
+        transparent={true}
+        onRequestClose={() => setShowSessions(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <TouchableOpacity
+              style={styles.closeButton}
+              onPress={() => setShowSessions(false)}
+            >
+              <Text style={styles.closeText}>Close</Text>
+            </TouchableOpacity>
+            <ScrollView>
+              {sessions.map((s) => (
+                <View key={s.id} style={styles.sessionRow}>
+                  <TouchableOpacity
+                    style={styles.sessionItem}
+                    onPress={() => {
+                      setCurrentSessionId(s.id);
+                      setShowSessions(false);
+                    }}
+                  >
+                    <Text style={styles.sessionText}>
+                      {s.createdAt.toLocaleDateString()}{" "}
+                      {s.createdAt.toLocaleTimeString()}
+                    </Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    style={styles.deleteButton}
+                    onPress={() => confirmDelete(s.id)}
+                  >
+                    <Text style={styles.deleteText}>Delete</Text>
+                  </TouchableOpacity>
+                </View>
+              ))}
+            </ScrollView>
+          </View>
+        </View>
+      </Modal>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  chatContainer: {
+  container: { flex: 1 },
+  header: {
+    flexDirection: "row",
+    backgroundColor: "#fff",
+    borderBottomWidth: 1,
+    borderColor: "#ddd",
+  },
+  headerButton: {
     flex: 1,
-    backgroundColor: "#f5f5f5",
+    padding: 12,
+    alignItems: "center",
+    borderRightWidth: 1,
+    borderColor: "#eee",
   },
-  messagesList: {
-    padding: 10,
-  },
+  headerButtonText: { fontWeight: "bold", color: "#007aff" },
+  chatArea: { flex: 1, backgroundColor: "#f5f5f5" },
+  messagesList: { padding: 10 },
   messageContainer: {
     flexDirection: "row",
     alignItems: "flex-end",
     marginBottom: 10,
   },
-  userContainer: {
-    justifyContent: "flex-end",
-  },
-  aiContainer: {
-    justifyContent: "flex-start",
-  },
-  chatBubble: {
-    maxWidth: "70%",
-    padding: 10,
-    borderRadius: 10,
-  },
-  userBubble: {
-    backgroundColor: "#007aff",
-    marginLeft: 10,
-  },
-  aiBubble: {
-    backgroundColor: "#e5e5ea",
-    marginRight: 10,
-  },
-  chatText: {
-    color: "#000000",
-  },
-  timestamp: {
-    fontSize: 12,
-    color: "#666",
-    marginTop: 5,
-  },
-  avatar: {
-    width: 30,
-    height: 30,
-    borderRadius: 15,
-    marginRight: 5,
-  },
-  chatInputContainer: {
+  userContainer: { justifyContent: "flex-end" },
+  aiContainer: { justifyContent: "flex-start" },
+  bubble: { maxWidth: "70%", padding: 10, borderRadius: 10 },
+  userBubble: { backgroundColor: "#007aff", marginLeft: 10 },
+  aiBubble: { backgroundColor: "#e5e5ea", marginRight: 10 },
+  text: { color: "#000" },
+  timestamp: { fontSize: 12, color: "#666", marginTop: 5 },
+  avatar: { width: 30, height: 30, borderRadius: 15, marginRight: 5 },
+  inputContainer: {
     flexDirection: "row",
     alignItems: "center",
     padding: 10,
     backgroundColor: "#fff",
     borderTopWidth: 1,
-    borderTopColor: "#ccc",
+    borderColor: "#ccc",
   },
-  chatInput: {
+  input: {
     flex: 1,
     padding: 10,
     backgroundColor: "#f5f5f5",
@@ -212,8 +439,54 @@ const styles = StyleSheet.create({
     backgroundColor: "#007aff",
     borderRadius: 20,
   },
-  sendButtonText: {
-    color: "#fff",
-    fontWeight: "bold",
+  sendText: { color: "#fff", fontWeight: "bold" },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: "rgba(0,0,0,0.4)",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  modalContent: {
+    width: "80%",
+    height: "60%",
+    backgroundColor: "#fff",
+    borderRadius: 8,
+    padding: 10,
+  },
+  closeButton: {
+    alignSelf: "flex-end",
+    padding: 6,
+  },
+  closeText: { color: "#007aff", fontWeight: "bold" },
+  sessionRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    borderBottomWidth: 1,
+    borderColor: "#eee",
+    paddingHorizontal: 10,
+    paddingVertical: 8,
+  },
+  sessionItem: {
+    flex: 1,
+  },
+  sessionText: { fontSize: 14 },
+  deleteButton: {
+    padding: 6,
+  },
+  deleteText: { color: "red" },
+
+  reasoningBarContainer: {
+    marginTop: 10,
+    height: 4,
+    backgroundColor: "#ccc",
+    overflow: "hidden",
+    borderRadius: 2,
+  },
+  reasoningBar: {
+    height: 4,
+    width: 50,
+    backgroundColor: "#007aff",
+    borderRadius: 2,
   },
 });
