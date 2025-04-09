@@ -149,7 +149,11 @@ export default function DetectSkin() {
         'Content-Type': 'multipart/form-data',
       },
     });
+    
+      if (response.data == 0){
+        Alert.alert('Image not related');
 
+      }
       setDetectionResult(response.data.result);
       await new Promise((resolve) => setTimeout(resolve, 2000)); 
     } catch (error) {

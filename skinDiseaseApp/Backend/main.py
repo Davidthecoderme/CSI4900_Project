@@ -90,6 +90,20 @@ async def classify_imagess(file: UploadFile = File(...)):
             raise HTTPException(status_code=400, detail="Uploaded file is empty")
         
         logger.info(f"Processing image: {temp_path}")
+
+        skin_validation = subprocess.run(
+            ['python', 'skin_nonskin_classifier.py', temp_path],
+            capture_output=True,
+            text=True,
+            timeout=30  # Add timeout to prevent hanging
+        )
+        logger.info(f"Process:  {skin_validation.stdout}")
+        if skin_validation.returncode  == 0:
+             logger.info(f"Image not related to skin{skin_validation.returncode}")
+             return skin_validation.returncode
+            
+
+        logger.info(f"Image related to skin  {skin_validation.stdout.strip()}")
         
         # Run
         result = subprocess.run(
