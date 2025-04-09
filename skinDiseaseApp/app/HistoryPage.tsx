@@ -6,10 +6,11 @@ import {
   Image,
   StyleSheet,
   ActivityIndicator,
+  Platform, 
 } from "react-native";
-import { auth } from "../../database/firebase";
+import { auth } from "../database/firebase";
 import { collection, query, where, getDocs } from "firebase/firestore";
-import { db } from "../../database/firebase";
+import { db } from "../database/firebase";
 
 const HistoryPage = () => {
   const [historyImages, setHistoryImages] = useState<
@@ -30,7 +31,7 @@ const HistoryPage = () => {
         const data = doc.data();
         userImages.push({
           url: data.downloadURL,
-          timestamp: data.timestamp, 
+          timestamp: data.timestamp,
         });
       });
 
@@ -46,7 +47,6 @@ const HistoryPage = () => {
     fetchHistoryImages();
   }, []);
 
-  // Format timestamp to local date and time string
   const formatTimestamp = (timestamp: string) => {
     try {
       const date = new Date(timestamp);
@@ -78,10 +78,14 @@ const HistoryPage = () => {
                 source={{ uri: item.url }}
                 style={styles.image}
                 resizeMode="contain"
-                onLoad={(event) => {
-                  const { width, height } = event.nativeEvent.source;
-                  console.log(`Image dimensions: ${width}x${height}`);
-                }}
+                onLoad={
+                  Platform.OS !== "web"
+                    ? (event) => {
+                        const { width, height } = event.nativeEvent.source;
+                        console.log(`Image dimensions: ${width}x${height}`);
+                      }
+                    : undefined
+                }
               />
               <Text style={styles.timestamp}>
                 Time Uploaded:{" "}

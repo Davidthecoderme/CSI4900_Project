@@ -16,7 +16,7 @@ import {
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { auth, db } from '../database/firebase';
-import { doc, getDoc, updateDoc } from 'firebase/firestore';
+import { doc, getDoc, setDoc } from 'firebase/firestore';
 import { updatePassword } from 'firebase/auth';
 import { LinearGradient } from 'expo-linear-gradient';
 
@@ -43,7 +43,6 @@ export default function UserInfoScreen() {
     }
   }, [user]);
 
-  // Fetch user info from Firestore
   const fetchUserData = async (uid: string) => {
     try {
       const docRef = doc(db, 'users', uid);
@@ -65,7 +64,6 @@ export default function UserInfoScreen() {
     }
   };
 
-
   const handleUpdate = async () => {
     if (!user) return;
     setLoading(true);
@@ -77,7 +75,6 @@ export default function UserInfoScreen() {
       return;
     }
 
-    // password
     if (newPassword.trim().length > 0 || confirmNewPassword.trim().length > 0) {
       if (newPassword.length < 6) {
         Alert.alert('Error', 'Password must be at least 6 characters');
@@ -91,7 +88,6 @@ export default function UserInfoScreen() {
       }
     }
 
-    // Validate smoking/drinking years
     if (smokingHistory) {
       const sYears = parseInt(smokingYears);
       if (isNaN(sYears) || sYears < 0 || sYears > 70) {
@@ -111,15 +107,19 @@ export default function UserInfoScreen() {
 
     try {
       const docRef = doc(db, 'users', user.uid);
-      await updateDoc(docRef, {
-        firstName: firstName.trim(),
-        lastName: lastName.trim(),
-        age: parsedAge,
-        smokingHistory,
-        smokingYears: smokingHistory ? parseInt(smokingYears) : 0,
-        drinkingHistory,
-        drinkingYears: drinkingHistory ? parseInt(drinkingYears) : 0,
-      });
+      await setDoc(
+        docRef,
+        {
+          firstName: firstName.trim(),
+          lastName: lastName.trim(),
+          age: parsedAge,
+          smokingHistory,
+          smokingYears: smokingHistory ? parseInt(smokingYears) : 0,
+          drinkingHistory,
+          drinkingYears: drinkingHistory ? parseInt(drinkingYears) : 0,
+        },
+        { merge: true }
+      );
 
       if (newPassword.trim().length > 0) {
         await updatePassword(user, newPassword);
@@ -136,10 +136,7 @@ export default function UserInfoScreen() {
   };
 
   return (
-    <LinearGradient
-      colors={['#6a11cb', '#2575fc']}
-      style={styles.gradient}
-    >
+    <LinearGradient colors={['#6a11cb', '#2575fc']} style={styles.gradient}>
       <KeyboardAvoidingView
         style={styles.container}
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
@@ -149,18 +146,10 @@ export default function UserInfoScreen() {
             <Text style={styles.title}>Update User Info</Text>
 
             <Text style={styles.label}>First Name</Text>
-            <TextInput
-              style={styles.input}
-              value={firstName}
-              onChangeText={setFirstName}
-            />
+            <TextInput style={styles.input} value={firstName} onChangeText={setFirstName} />
 
             <Text style={styles.label}>Last Name</Text>
-            <TextInput
-              style={styles.input}
-              value={lastName}
-              onChangeText={setLastName}
-            />
+            <TextInput style={styles.input} value={lastName} onChangeText={setLastName} />
 
             <Text style={styles.label}>Age</Text>
             <TextInput
@@ -218,7 +207,7 @@ export default function UserInfoScreen() {
                 />
               </View>
             )}
-            
+
             {/*
             <Text style={styles.label}>New Password (optional)</Text>
             <TextInput
@@ -237,23 +226,17 @@ export default function UserInfoScreen() {
               secureTextEntry
               placeholder="Re-enter new password"
             />
-             */}
-            
+            */}
 
             <TouchableOpacity
               style={[styles.button, loading && styles.disabledButton]}
               onPress={handleUpdate}
               disabled={loading}
             >
-              <Text style={styles.buttonText}>
-                {loading ? 'Updating...' : 'Save Changes'}
-              </Text>
+              <Text style={styles.buttonText}>{loading ? 'Updating...' : 'Save Changes'}</Text>
             </TouchableOpacity>
 
-            <TouchableOpacity
-              style={styles.backButton}
-              onPress={() => router.back()}
-            >
+            <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
               <Text style={styles.backButtonText}>Back</Text>
             </TouchableOpacity>
           </ScrollView>

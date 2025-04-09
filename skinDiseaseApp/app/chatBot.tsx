@@ -1,5 +1,4 @@
 // ChatbotPage.tsx
-
 import React, { useState, useRef, useEffect } from "react";
 import {
   View,
@@ -38,7 +37,7 @@ const ReasoningIndicator = () => {
   useEffect(() => {
     Animated.loop(
       Animated.timing(translateX, {
-        toValue: 50, 
+        toValue: 50,
         duration: 1500,
         easing: Easing.linear,
         useNativeDriver: true,
@@ -60,9 +59,7 @@ const ReasoningIndicator = () => {
 
 export default function ChatbotPage() {
   const user = auth.currentUser;
-  const [sessions, setSessions] = useState<{ id: string; createdAt: Date }[]>(
-    []
-  );
+  const [sessions, setSessions] = useState<{ id: string; createdAt: Date }[]>([]);
   const [currentSessionId, setCurrentSessionId] = useState<string | null>(null);
   const [messages, setMessages] = useState<
     { id?: string; role: string; text: string; timestamp: string }[]
@@ -70,10 +67,9 @@ export default function ChatbotPage() {
   const [inputText, setInputText] = useState("");
   const [showSessions, setShowSessions] = useState(false);
   const [isThinking, setIsThinking] = useState(false);
-
   const scrollViewRef = useRef<ScrollView>(null);
 
-  // Load sessions
+
   useEffect(() => {
     if (!user) return;
     const sessionsRef = collection(db, "chats", user.uid, "sessions");
@@ -87,7 +83,7 @@ export default function ChatbotPage() {
         };
       });
       setSessions(list);
-      // Auto-select the first session if none is selected
+
       if (!currentSessionId && list.length) {
         setCurrentSessionId(list[0].id);
       }
@@ -95,7 +91,7 @@ export default function ChatbotPage() {
     return unsub;
   }, [user]);
 
-  // Load messages of the current session
+
   useEffect(() => {
     if (!user || !currentSessionId) {
       setMessages([]);
@@ -123,7 +119,6 @@ export default function ChatbotPage() {
     return unsub;
   }, [user, currentSessionId]);
 
-  // Confirm new session
   const confirmNewSession = () => {
     Alert.alert(
       "Start a new chat?",
@@ -142,7 +137,6 @@ export default function ChatbotPage() {
         createdAt: serverTimestamp(),
       });
 
-      // Insert an initial assistant message
       await addDoc(
         collection(db, "chats", user.uid, "sessions", docRef.id, "messages"),
         {
@@ -159,13 +153,10 @@ export default function ChatbotPage() {
     }
   };
 
-  // Delete session
   const deleteSession = async (sessionId: string) => {
     if (!user) return;
     try {
       const batch = writeBatch(db);
-
-      // get all messages
       const msgsSnap = await getDocs(
         collection(db, "chats", user.uid, "sessions", sessionId, "messages")
       );
@@ -175,7 +166,6 @@ export default function ChatbotPage() {
       await batch.commit();
 
       if (sessionId === currentSessionId) {
-        // if we're currently in this session, switch to another
         setCurrentSessionId((prev) => {
           const remaining = sessions.filter((s) => s.id !== sessionId);
           return remaining[0]?.id || null;
@@ -186,39 +176,25 @@ export default function ChatbotPage() {
     }
   };
 
-  // Confirm delete
   const confirmDelete = (sessionId: string) => {
     Alert.alert(
       "Delete session?",
       "This will remove all messages in this session.",
       [
         { text: "Cancel", style: "cancel" },
-        {
-          text: "Delete",
-          style: "destructive",
-          onPress: () => deleteSession(sessionId),
-        },
+        { text: "Delete", style: "destructive", onPress: () => deleteSession(sessionId) },
       ]
     );
   };
 
-  // Send user message + AI reply
   const sendMessage = async () => {
     if (!inputText.trim() || !user || !currentSessionId) return;
     const text = inputText.trim();
     const time = new Date().toLocaleTimeString();
     setInputText("");
 
-    // 1) add user message
     await addDoc(
-      collection(
-        db,
-        "chats",
-        user.uid,
-        "sessions",
-        currentSessionId,
-        "messages"
-      ),
+      collection(db, "chats", user.uid, "sessions", currentSessionId, "messages"),
       {
         role: "user",
         text,
@@ -231,7 +207,7 @@ export default function ChatbotPage() {
 
     let aiText = "";
     try {
-      // timeout 15s
+   
       const resp = await axios.post(API_URL, { message: text }, { timeout: 15000 });
       aiText =
         typeof resp.data.response === "string"
@@ -240,22 +216,14 @@ export default function ChatbotPage() {
     } catch (err) {
       Alert.alert("Error", "Failed to connect to chatbot");
       setIsThinking(false);
-      return;
+      return
     }
 
     setIsThinking(false);
 
-    // 5) add AI message
     const aiTime = new Date().toLocaleTimeString();
     await addDoc(
-      collection(
-        db,
-        "chats",
-        user.uid,
-        "sessions",
-        currentSessionId,
-        "messages"
-      ),
+      collection(db, "chats", user.uid, "sessions", currentSessionId, "messages"),
       {
         role: "ai",
         text: aiText,
@@ -364,8 +332,7 @@ export default function ChatbotPage() {
                     }}
                   >
                     <Text style={styles.sessionText}>
-                      {s.createdAt.toLocaleDateString()}{" "}
-                      {s.createdAt.toLocaleTimeString()}
+                      {s.createdAt.toLocaleDateString()} {s.createdAt.toLocaleTimeString()}
                     </Text>
                   </TouchableOpacity>
                   <TouchableOpacity
@@ -475,7 +442,6 @@ const styles = StyleSheet.create({
     padding: 6,
   },
   deleteText: { color: "red" },
-
   reasoningBarContainer: {
     marginTop: 10,
     height: 4,
