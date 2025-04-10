@@ -5,9 +5,10 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { collection, query, where, getDocs } from "firebase/firestore";
 import { auth, db } from "../../database/firebase";
 
+
 export default function HomeScreen() {
   const router = useRouter();
-  const [randomArticles, setRandomArticles] = useState([]);
+  const [randomArticles, setRandomArticles] = useState<{ id: string; title: string; image: any }[]>([]);
   
   // Stats data with state for dynamic values
   const [photoStats, setPhotoStats] = useState({
@@ -45,16 +46,52 @@ export default function HomeScreen() {
   ];
 
   // All available articles
+
+  const allArticles = [
+    { 
+      id: '1', 
+      title: 'Understanding Adult Acne: Causes and Solutions',
+      image: require('../../assets/images/acne.png') 
+    },
+    { 
+      id: '2', 
+      title: 'AI Dermatologist Just Got Smarter: AI Consultant and PDF Report!',
+      image: require('../../assets/images/ai-dermatologist.jpg') 
+    },
+    { 
+      id: '3', 
+      title: 'Top facialists on the trending treatments and innovative ingredients to try in 2025',
+      image: require('../../assets/images/facial-treatment.jpg') 
+    },
+    { 
+      id: '4', 
+      title: '5 Reasons to start Mole-mapping',
+      image: require('../../assets/images/mole-mapping.png') 
+    },
+    { 
+      id: '5', 
+      title: 'Skincare Questions You Were Too Afraid to Ask',
+      image: require('../../assets/images/skinQuestions.png') 
+    },
+    { 
+      id: '6', 
+      title: 'How To Calm Redness',
+      image: require('../../assets/images/calm-redness.png') 
+    },
+
+  ]
+
+/* 
   const allArticles = [
     { 
       id: '1', 
       title: '5 Reasons to start Mole-mapping',
-      //image: require('../../assets/articles/mole-mapping.jpg') 
+      image: require('../../assets/images/mole-mapping.png') 
     },
     { 
       id: '2', 
       title: 'Understanding Skin Cancer Risks',
-      //mage: require('../../assets/articles/skin-cancer.jpg') 
+      //image: require('../../assets/articles/skin-cancer.jpg') 
     },
     { 
       id: '3', 
@@ -63,30 +100,31 @@ export default function HomeScreen() {
     },
     { 
       id: '4', 
-      title: 'When to See a Dermatologist',
-      //image: require('../../assets/articles/dermatologist.jpg') 
+      title: 'AI Dermatologist Just Got Smarter: AI Consultant and PDF Report!',
+      image: require('../../assets/images/ai-dermatologist.jpg') 
     },
     { 
       id: '5', 
-      title: 'Sun Protection Essentials',
-      //image: require('../../assets/articles/sun-protection.jpg') 
+      title: 'Top facialists on the trending treatments and innovative ingredients to try in 2025',
+      image: require('../../assets/images/facial-treatment.jpg') 
     },
     { 
       id: '6', 
-      title: 'Common Skin Conditions',
-      //image: require('../../assets/articles/skin-conditions.jpg') 
+      title: 'Skincare Questions You Were Too Afraid to Ask',
+      image: require('../../assets/images/skinQuestions.png') 
     },
     { 
       id: '7', 
-      title: 'Acne Treatment Guide',
-      //image: require('../../assets/articles/acne-treatment.jpg') 
+      title: 'Understanding Adult Acne: Causes and Solutions',
+      image: require('../../assets/images/acne.png') 
     },
     { 
       id: '8', 
-      title: 'Anti-Aging Skincare Tips',
-      //image: require('../../assets/articles/anti-aging.jpg') 
+      title: 'How To Calm Redness',
+      image: require('../../assets/images/calm-redness.png') 
     },
   ];
+*/
 
   // Fetch Firestore photo statistics when component mounts
   useEffect(() => {
@@ -229,7 +267,7 @@ export default function HomeScreen() {
         renderItem={({ item }) => (
           <TouchableOpacity 
             style={styles.articleCard}
-            onPress={() => router.push(`/articles/${item.id}`)}
+            onPress={() => router.push(`../blog/${item.id}`)}
           >
             <Image source={item.image} style={styles.articleImage} />
             <Text style={styles.articleTitle}>{item.title}</Text>
