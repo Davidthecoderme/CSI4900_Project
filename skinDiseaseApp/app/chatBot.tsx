@@ -16,6 +16,7 @@ import {
   Easing,
 } from "react-native";
 import axios from "axios";
+import { useRouter, useLocalSearchParams } from "expo-router";
 import { auth, db } from "../database/firebase";
 import {
   collection,
@@ -47,17 +48,14 @@ const ReasoningIndicator = () => {
 
   return (
     <View style={styles.reasoningBarContainer}>
-      <Animated.View
-        style={[
-          styles.reasoningBar,
-          { transform: [{ translateX }] },
-        ]}
-      />
+      <Animated.View style={[styles.reasoningBar, { transform: [{ translateX }] }]} />
     </View>
   );
 };
 
 export default function ChatbotPage() {
+  const router = useRouter();
+  const { treatmentQuery } = useLocalSearchParams(); // Get treatmentQuery from URL params
   const user = auth.currentUser;
   const [sessions, setSessions] = useState<{ id: string; createdAt: Date }[]>([]);
   const [currentSessionId, setCurrentSessionId] = useState<string | null>(null);
@@ -69,6 +67,16 @@ export default function ChatbotPage() {
   const [isThinking, setIsThinking] = useState(false);
   const scrollViewRef = useRef<ScrollView>(null);
 
+  // If a treatment query exists, prefill the input (or add a system message)
+  useEffect(() => {
+    if (treatmentQuery && typeof treatmentQuery === "string") {
+      // Option 1: Automatically set the input text
+      setInputText(treatmentQuery);
+      
+      // Option 2: Or automatically add a message to the conversation:
+      // addMessage("user", treatmentQuery);
+    }
+  }, [treatmentQuery]);
 
   useEffect(() => {
     if (!user) return;
@@ -90,7 +98,6 @@ export default function ChatbotPage() {
     });
     return unsub;
   }, [user]);
-
 
   useEffect(() => {
     if (!user || !currentSessionId) {
@@ -207,7 +214,6 @@ export default function ChatbotPage() {
 
     let aiText = "";
     try {
-   
       const resp = await axios.post(API_URL, { message: text }, { timeout: 15000 });
       aiText =
         typeof resp.data.response === "string"
@@ -216,7 +222,7 @@ export default function ChatbotPage() {
     } catch (err) {
       Alert.alert("Error", "Failed to connect to chatbot");
       setIsThinking(false);
-      return
+      return;
     }
 
     setIsThinking(false);
@@ -434,13 +440,9 @@ const styles = StyleSheet.create({
     paddingHorizontal: 10,
     paddingVertical: 8,
   },
-  sessionItem: {
-    flex: 1,
-  },
+  sessionItem: { flex: 1 },
   sessionText: { fontSize: 14 },
-  deleteButton: {
-    padding: 6,
-  },
+  deleteButton: { padding: 6 },
   deleteText: { color: "red" },
   reasoningBarContainer: {
     marginTop: 10,
