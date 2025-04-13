@@ -28,4 +28,6 @@ backend steps:
 * make the terminal as bash, then make sure it is under you path location: 
 * temporary shut down firewall in order to run the program on mobile: netsh advfirewall set allprofiles state off (run this at CMD under administration )
 * in the terminal type : source venv/Scripts/activate 
+* then type : pip install -r requirements.txt
+$ then type: pip install tensorflow opencv-python numpy
 * then type : uvicorn main:app --host 0.0.0.0 --port 8000 --reload 
