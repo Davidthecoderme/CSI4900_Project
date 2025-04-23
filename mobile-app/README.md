@@ -11,6 +11,9 @@ This is an [Expo](https://expo.dev) project created with [`create-expo-app`](htt
    npm install expo-constants
    ```
 
+## Please add your IP ADDRESS to the  IP_ADDR variable below like IP_ADDR=191.178.1.2
+```IP_ADDR=````
+
 2. Start the app
 
    ```bash
