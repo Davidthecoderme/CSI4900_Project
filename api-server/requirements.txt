@@ -1,0 +1,34 @@
+ 
+# API Framework
+fastapi>=0.95.0
+uvicorn>=0.22.0
+pydantic>=2.0.0
+python-multipart>=0.0.6  # For file uploads
+
+# Async utilities
+aiofiles>=23.1.0  # For async file operations
+
+# Machine Learning Frameworks
+tensorflow>=2.10.0  # For Keras models
+torch>=2.0.0  # For PyTorch models
+torchvision>=0.15.0  # For image transformations
+
+# Image Processing
+opencv-python>=4.7.0
+pillow>=9.4.0
+matplotlib>=3.7.0  # For visualization if needed
+numpy>=1.24.0
+
+# Google Generative AI
+google-generativeai>=0.3.0
+
+# Configuration
+python-dotenv>=1.0.0
+
+# Logging
+loguru>=0.7.0  # Optional enhanced logging
+
+# Testing
+pytest>=7.3.1
+pytest-asyncio>=0.21.0
+httpx>=0.24.0  # For async HTTP client in testsvv
