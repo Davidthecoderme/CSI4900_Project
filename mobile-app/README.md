@@ -18,9 +18,9 @@ This is an [Expo](https://expo.dev) project created with [`create-expo-app`](htt
 
 4. Start the app
 
-   ```bash
-    npx expo start
-   ```
+```bash
+   npx expo start
+```
 these packages need to be installed first: 
 * npm install axios expo-image-picker expo-router firebase   ,
 * npm install @aws-sdk/client-s3 ,
