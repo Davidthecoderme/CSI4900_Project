@@ -6,7 +6,7 @@ import {
   Image,
   StyleSheet,
   ActivityIndicator,
-  Platform, 
+  Platform,
 } from "react-native";
 import { auth } from "../database/firebase";
 import { collection, query, where, getDocs } from "firebase/firestore";
@@ -34,6 +34,10 @@ const HistoryPage = () => {
           timestamp: data.timestamp,
         });
       });
+
+      userImages.sort(
+        (a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime()
+      );
 
       setHistoryImages(userImages);
     } catch (error) {

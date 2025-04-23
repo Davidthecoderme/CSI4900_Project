@@ -32,3 +32,4 @@ loguru>=0.7.0  # Optional enhanced logging
 pytest>=7.3.1
 pytest-asyncio>=0.21.0
 httpx>=0.24.0  # For async HTTP client in testsvv
+pydantic-settings
