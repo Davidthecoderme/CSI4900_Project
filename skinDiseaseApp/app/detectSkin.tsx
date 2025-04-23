@@ -25,6 +25,7 @@ export default function DetectSkin() {
   const user = auth.currentUser;
 
   const [images, setImages] = useState<string[]>([]);
+  const [maskImage, setMaskImage] = useState();
   const [uploading, setUploading] = useState(false);
   const [detectionInProgress, setDetectionInProgress] = useState(false);
   const [detectionResult, setDetectionResult] = useState<string | null>(null);
@@ -149,13 +150,42 @@ export default function DetectSkin() {
         'Content-Type': 'multipart/form-data',
       },
     });
-    
-      if (response.data == 0){
-        Alert.alert('Image not related');
+<<<<<<< Updated upstream
 
-      }
       setDetectionResult(response.data.result);
       await new Promise((resolve) => setTimeout(resolve, 2000)); 
+=======
+
+    // Handle different response types
+    if (typeof response.data === 'number') {
+      if (response.data === 0) {
+        Alert.alert('Image not skin-related');
+      }
+      return;
+    }
+
+      // setImages(response.data.maskImage);
+      // setMaskImage(response.data.maskImage);
+      // console.log('hello'+response.data.processedImage)
+
+      if (response.data.processedImage) {
+        const cleanBase64 = response.data.processedImage
+        .split('\n')
+        .find((line: string) => line.startsWith('data:image/'));
+        console.log('New image:', cleanBase64); 
+
+
+        setImages(prev => [...prev, cleanBase64]);
+
+        const newMaskImage = response.data.processedImage;
+
+      }
+  
+      if (response.data.result) {
+        setDetectionResult(response.data.result);
+      }
+
+>>>>>>> Stashed changes
     } catch (error) {
       console.error('Detection error:', error);
       Alert.alert('Detection failed');
@@ -163,6 +193,8 @@ export default function DetectSkin() {
       setDetectionInProgress(false);
     }
   };
+
+
 
 
   
@@ -195,6 +227,15 @@ export default function DetectSkin() {
       ) : (
         <Text style={styles.infoText}>No images selected</Text>
       )}
+
+      {/* {maskImage && (
+          <View style={styles.imageContainer}>
+            <Text>Segmentation Mask</Text>
+            <Image source={{ uri: maskImage }} style={styles.image} />
+          </View>
+        )} */}
+
+      
 
       <TouchableOpacity
         style={[styles.button, uploading && styles.disabledButton]}
@@ -243,6 +284,12 @@ export default function DetectSkin() {
           </>
         )}
       </TouchableOpacity>
+      {/* {maskImage && (
+          <View style={styles.imageContainer}>
+            <Text>Segmentation Mask</Text>
+            <Image source={{ uri: maskImage }} style={styles.image} />
+          </View>
+        )} */}
 
       {detectionResult && (
         <View style={styles.resultContainer}>

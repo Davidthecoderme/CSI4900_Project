@@ -40,7 +40,8 @@ export default function LoginScreen() {
     setLoading(true);
     try {
       await signInWithEmailAndPassword(auth, email, password);
-      router.push('./homePage');
+      //router.replace('/(tabs)');
+      router.replace('/(tabs)/home');
     } catch (error: any) {
       let errorMessage = 'Sign in failed';
       switch (error.code) {
