@@ -1,5 +1,6 @@
 // ChatbotPage.tsx
 import React, { useState, useRef, useEffect } from "react";
+import Constants from 'expo-constants';
 import {
   View,
   Text,
@@ -30,7 +31,9 @@ import {
   doc,
 } from "firebase/firestore";
 
-const API_URL = "http://192.168.2.11:8000/api/chat";
+const IP_ADDR = Constants.expoConfig.extra.ipAddr;
+const API_URL = `http://${IP_ADDR}:8000/api/chat`;
+
 
 // Animated loading indicator for "Reasoning..."
 const ReasoningIndicator = () => {

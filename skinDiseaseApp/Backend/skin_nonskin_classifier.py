@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-skin_vs_nonskin Classifier - Command Line Tool
+Skin Disease Image Classifier - Command Line Tool
 Usage: python skin_classifier.py <image_path> [--threshold THRESHOLD]
 """
 
@@ -63,7 +63,6 @@ def main():
         is_skin, confidence = classify_skin(args.image_path, args.threshold)
     except:
         print(f"Error")
-
 
 
     

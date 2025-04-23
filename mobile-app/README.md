@@ -8,6 +8,7 @@ This is an [Expo](https://expo.dev) project created with [`create-expo-app`](htt
 
    ```bash
    npm install
+   npm install expo-constants
    ```
 
 2. Start the app
@@ -30,4 +31,4 @@ backend steps:
 * in the terminal type : source venv/Scripts/activate 
 * then type : pip install -r requirements.txt
 $ then type: pip install tensorflow opencv-python numpy
-* then type : uvicorn main:app --host 0.0.0.0 --port 8000 --reload 
+* then type : uvicorn main:app --host 0.0.0.0 --port 8000 --reload

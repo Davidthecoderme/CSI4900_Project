@@ -1,5 +1,8 @@
-// app/(tabs)/home.tsx
+// Scan.tsx
 import React, { useState, useEffect } from 'react';
+
+import Constants from 'expo-constants';
+
 import {
   View,
   Text,
@@ -18,7 +21,9 @@ import { auth, db } from '../../database/firebase';
 import { collection, addDoc } from 'firebase/firestore';
 import { uploadFileToS3 } from '../../database/s3';
 
-const API_URL = "http://192.168.2.11:8000/api/detect";
+const IP_ADDR = Constants.expoConfig.extra.ipAddr;
+
+const API_URL = `http://${IP_ADDR}:8000/api/detect`;
 
 export default function HomeScreen() {
   const router = useRouter();
