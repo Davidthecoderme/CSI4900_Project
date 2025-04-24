@@ -12,6 +12,10 @@ This is an [Expo](https://expo.dev) project created with [`create-expo-app`](htt
    ```
 
 2. Please add your IP ADDRESS to the  IP_ADDR variable below like (eg: IP_ADDR=191.178.1.2)
+
+   you can get your IP address by typing ipconfig in your commmand Prompt: 
+   ![alt text](image.png)
+    
    
 ```bash
    IP_ADDR=
@@ -22,8 +26,8 @@ This is an [Expo](https://expo.dev) project created with [`create-expo-app`](htt
 ```bash
    npx expo start
 ```
-these packages need to be installed first: 
-* npm install axios expo-image-picker expo-router firebase   ,
+these packages need to be installed in the terminal: 
+* npm install axios expo-image-picker expo-router firebase ,
 * npm install @aws-sdk/client-s3 ,
 * npm install react-native-get-random-values,
 * expo install expo-linear-gradient ,
@@ -31,10 +35,3 @@ these packages need to be installed first:
 * npm install @react-native-picker/picker
 * npm install react-native-keyboard-aware-scroll-view
 
-backend steps: 
-* make the terminal as bash, then make sure it is under you path location: 
-* temporary shut down firewall in order to run the program on mobile: netsh advfirewall set allprofiles state off (run this at CMD under administration )
-* in the terminal type : source venv/Scripts/activate 
-* then type : pip install -r requirements.txt
-$ then type: pip install tensorflow opencv-python numpy
-* then type : uvicorn main:app --host 0.0.0.0 --port 8000 --reload
