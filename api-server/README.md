@@ -31,10 +31,12 @@ This design ensures separation of concerns, maintainability, and testability.
 
 ### Setup
 
+### Basic Setup
+
 1. Clone the repository:
-   ```bash
-   git clone https://github.com/yourusername/skin-lesion-detection.git
-   cd skin-lesion-detection
+   ```
+   git clone https://github.com/Davidthecoderme/CSI4900_Project.git
+   cd CSI4900_Project/api-server
    ```
 
 2. Create a virtual environment:

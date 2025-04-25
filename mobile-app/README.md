@@ -23,6 +23,15 @@ The SkinScan AI mobile application provides an intuitive interface for skin lesi
 
 ## Setup Instructions
 
+
+### Basic Setup
+
+1. Clone the repository:
+   ```
+   git clone https://github.com/Davidthecoderme/CSI4900_Project.git
+   cd CSI4900_Project/mobile-app
+   ```
+
 ### 1. Install Dependencies
 
 First, install the core dependencies:
