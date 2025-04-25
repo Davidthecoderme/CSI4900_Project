@@ -4,7 +4,7 @@ A Python-based CLI tool for classifying skin lesion images using a deep learning
 
 ## Overview
 
-This tool uses a pre-trained MobileNetV2 CNN model to analyze dermoscopic images of skin lesions and classify them into one of the following categories:
+This tool uses a pre-trained EfficientNetV2 CNN model to analyze dermoscopic images of skin lesions and classify them into one of the following categories:
 
 - Melanocytic nevi (nv)
 - Melanoma (mel)
@@ -42,12 +42,20 @@ The HAM10000 dataset ("Human Against Machine with 10000 training images") is a l
    pip install -r requirements.txt
    ```
 
+3. Make sure trained PyTorch model file (`EfficientNetV2Large_ham10000.pth`) in the (`api-server/models/`) directory or update the `MODEL_PATH` variable in the script to point to your model file.
+
 ## Usage
 
 The basic usage of the tool is:
 
 ```
 python skin_lesion_classifier.py --image path/to/your/image.jpg
+```
+
+Example (if the image is in the same folder):
+
+```
+python skin_lesion_classifier.py --image ISIC_0029313.jpg
 ```
 
 ### Options
@@ -86,11 +94,11 @@ Top 3 predictions:
 
 ## Model Architecture
 
-This tool uses a MobileNetV2 convolutional neural network architecture, which provides a good balance between accuracy and computational efficiency. The model was fine-tuned on the HAM10000 dataset, which contains over 10,000 dermatoscopic images of pigmented skin lesions.
+This tool uses a EfficientNetV2 convolutional neural network architecture, which provides a good balance between accuracy and computational efficiency. The model was fine-tuned on the HAM10000 dataset, which contains over 10,000 dermatoscopic images of pigmented skin lesions.
 
 Key features of the model:
 - Pretrained on ImageNet and fine-tuned on skin lesion images
-- Input image size: 224x224 pixels
+- Input image size: 480x480 pixels
 - 7-class classification output
 - Optimized for both speed and accuracy
 
@@ -126,4 +134,4 @@ This tool is intended for research and educational purposes only. It should not 
 ## References
 
 - HAM10000 Dataset: https://dataverse.harvard.edu/dataset.xhtml?persistentId=doi:10.7910/DVN/DBW86T
-- MobileNetV2 Architecture: Sandler, M., Howard, A., Zhu, M., Zhmoginov, A., & Chen, L. C. (2018). MobileNetV2: Inverted Residuals and Linear Bottlenecks. In Proceedings of the IEEE conference on computer vision and pattern recognition (pp. 4510-4520).
+
