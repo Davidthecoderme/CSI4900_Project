@@ -42,8 +42,6 @@ The HAM10000 dataset ("Human Against Machine with 10000 training images") is a l
    pip install -r requirements.txt
    ```
 
-3. Place your trained PyTorch model file (`complete_model.pth`) in the same directory as the script or update the `MODEL_PATH` variable in the script to point to your model file.
-
 ## Usage
 
 The basic usage of the tool is:
@@ -119,6 +117,7 @@ The tool depends on the following Python packages (specified in `requirements.tx
 - pillow>=8.4.0
 - matplotlib>=3.5.0
 - numpy>=1.21.0
+- timm==0.9.5  # For model loading and transformations
 
 ## Disclaimer
 

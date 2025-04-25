@@ -16,10 +16,10 @@ from PIL import Image
 import torchvision.transforms as transforms
 import torch.nn.functional as F
 import matplotlib.pyplot as plt
-from torchvision.models import mobilenet_v2  # Import this for safe loading
+import timm  # Import timm for EfficientNetV2
 
 # Hardcoded model path - modify this to match your model's location
-MODEL_PATH = "complete_model.pth"
+MODEL_PATH = "../api-server/models/EfficientNetV2Large_ham10000.pth"  # Updated model name
 
 def classify_skin_lesion(image_path):
     """
@@ -27,7 +27,7 @@ def classify_skin_lesion(image_path):
     
     Args:
         image_path (str): Path to the image file
-    
+        
     Returns:
         tuple: (label, name, probability, top3_results)
     """
@@ -53,7 +53,7 @@ def classify_skin_lesion(image_path):
     try:
         if torch.cuda.is_available():
             # Modified to allow full model loading
-            model = torch.load(MODEL_PATH, weights_only=False)
+            model = torch.load(MODEL_PATH, map_location=torch.device('cuda'), weights_only=False)
         else:
             # Modified to allow full model loading on CPU
             model = torch.load(MODEL_PATH, map_location=torch.device('cpu'), weights_only=False)
@@ -68,11 +68,11 @@ def classify_skin_lesion(image_path):
     
     # Define image transformations based on the training procedure
     # These values match those used in the notebook
-    NORM_MEAN = [0.7630392, 0.5456477, 0.57004845]  # RGB channels
-    NORM_STD = [0.1409286, 0.15261266, 0.16997074]  # RGB channels
+    NORM_MEAN = [0.485, 0.456, 0.406]  # RGB channels (ImageNet values from notebook)
+    NORM_STD = [0.229, 0.224, 0.225]  # RGB channels (ImageNet values from notebook)
     
     transform = transforms.Compose([
-        transforms.Resize((224, 224)),
+        transforms.Resize((480, 480)),  # Resize to match EfficientNetV2-Large input size
         transforms.ToTensor(),
         transforms.Normalize(NORM_MEAN, NORM_STD)
     ])
@@ -124,7 +124,7 @@ def visualize_prediction(image_path, label, name, probability, top3_results=None
         y_offset = 0.02
         for i, (label, name, prob) in enumerate(top3_results):
             plt.figtext(0.02, y_offset, f"{i+1}. {name} ({label}): {prob:.2f}%", 
-                       bbox=dict(facecolor='white', alpha=0.8))
+                        bbox=dict(facecolor='white', alpha=0.8))
             y_offset += 0.04
     
     plt.tight_layout()
@@ -145,9 +145,9 @@ def main():
         
         # Print results
         print(f"\nPrediction: {name} ({label})")
-        print(f"Confidence: {probability:.2f}%")
+        print(f"Confidence: {probability:.2f}%\n")
         
-        print("\nTop 3 predictions:")
+        print("Top 3 predictions:")
         for i, (label, name, prob) in enumerate(top3_results):
             print(f"{i+1}. {name} ({label}): {prob:.2f}%")
         
