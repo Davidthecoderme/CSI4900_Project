@@ -3,3 +3,4 @@ torchvision>=0.11.1
 pillow>=8.4.0
 matplotlib>=3.5.0
 numpy>=1.21.0
+timm==0.9.5  # For model loading and transformations
