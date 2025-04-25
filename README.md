@@ -50,7 +50,6 @@ A command-line tool for quick testing of the skin lesion classification model. T
 
 - Perform rapid assessment of skin lesion images using the same model deployed in the server
 - View classification results with confidence scores
-- Optionally visualize results with prediction overlays
 
 ## Model Information
 
