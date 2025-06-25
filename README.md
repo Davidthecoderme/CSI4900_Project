@@ -9,7 +9,7 @@ This project addresses the challenge of limited access to dermatological care by
 ## Repository Structure
 
 ```
-SkinScan-AI/
+CSI4900_Project/
 ├── api-server/        # Backend server with AI models and API endpoints
 ├── mobile-app/        # React Native mobile application 
 ├── tool/              # CLI tool for testing the model locally
