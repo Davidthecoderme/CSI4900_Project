@@ -1,17 +1,14 @@
 import 'react-native-get-random-values'; 
 import { S3Client, PutObjectCommand } from "@aws-sdk/client-s3";
 import * as FileSystem from 'expo-file-system';
+import { AWS_REGION, S3_BUCKET_NAME, AWS_ACCESS_KEY, AWS_SECRET_KEY } from "@env";
 
-const AWS_REGION = "us-east-1";
-const S3_BUCKET_NAME = "amzn-s3-skincancer-bucket";
-const ACCESS_KEY = "AKIATAVABJ4JUZWBSAWU";
-const SECRET_KEY = "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";
 
 const s3Client = new S3Client({
   region: AWS_REGION,
   credentials: {
-    accessKeyId: ACCESS_KEY,
-    secretAccessKey: SECRET_KEY,
+    accessKeyId: AWS_ACCESS_KEY,
+    secretAccessKey: AWS_SECRET_KEY,
   },
 });
 
